@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPGA Cyclone IV EP4CE6 - MarketTrader Electronics</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .chat-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .chat-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 350px;
+            height: 450px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            animation: slideIn 0.3s ease;
+        }
+
+        .bot-message {
+            background: #e3f2fd;
+            align-self: flex-start;
+        }
+
+        .user-message {
+            background: #667eea;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .quick-actions {
+            padding: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .action-btn {
+            display: block;
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: #f1f3f4;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #e8eaed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            background: #e3f2fd;
+            border-radius: 18px;
+            max-width: 80%;
+            margin-bottom: 15px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .chat-window {
+                width: calc(100vw - 40px);
+                right: 20px;
+                left: 20px;
+            }
+        }	
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .pricing-info {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+        }
+
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .spec-item {
+            background: rgba(52, 152, 219, 0.1);
+            padding: 12px 18px;
+            border-radius: 15px;
+            border-left: 4px solid #3498db;
+            font-size: 0.9rem;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border-color: #3498db;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            transition: left 0.3s ease;
+        }
+
+        .product-card:hover::before {
+            left: 0;
+        }
+
+        .product-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .product-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-label {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .field-input {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .view-product-btn {
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .view-product-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .component-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .component-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .component-qty {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .component-qty label {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .component-qty input {
+            width: 80px;
+            padding: 5px 8px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .bundle-price {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .footer-info {
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            text-align: center;
+            padding: 30px;
+            border-radius: 20px;
+            margin-top: 30px;
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .product-fields {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .specs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .section {
+                padding: 20px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .product-card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1><i class="fas fa-microchip"></i> FPGA Electronics Store</h1>
+            <p class="subtitle">Професійні рішення для розробки електроніки</p>
+            <div class="pricing-info">
+                <i class="fas fa-handshake"></i> Торг доречний | Мін. замовлення: 10000 грн | Знижка 1.21% від 15000 грн
+            </div>
+        </div>
+
+        <!-- Main Product Section -->
+        <div class="section">
+            <h2><i class="fas fa-star"></i> Основний товар</h2>
+            <div class="product-grid">
+                <div class="product-card">
+                    <div class="product-title">
+                        Плата Cyclone IV FPGA EP4CE6E22C8N EP4CE6, розробка ALTERA Cyclone4 NiosII
+                    </div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="2500">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                                <option>Немає в наявності</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="https://www.olx.ua/d/uk/890133157/" target="new" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+            </div>
+
+            <div class="specs-grid">
+                <div class="spec-item">⚡ Тактова частота: 50 МГц</div>
+                <div class="spec-item">🔋 Робоча напруга: 1.15В ~ 3.465В</div>
+                <div class="spec-item">🔌 Входи/виходи (I/Os): 80</div>
+                <div class="spec-item">💾 Логічні елементи: 6К</div>
+                <div class="spec-item">🧠 RAM: 270 кбіт</div>
+                <div class="spec-item">🔄 Фазові детектори: 2</div>
+                <div class="spec-item">🔧 Підтримка JTAG</div>
+                <div class="spec-item">💡 Світлодіоди живлення</div>
+            </div>
+        </div>
+
+        <!-- Bundle Products Section -->
+        <div class="section">
+            <h2><i class="fas fa-box-open"></i> Товар в комплекті</h2>
+            <div class="bundle-price">
+                <i class="fas fa-tags"></i> Комплект: +5790 грн
+            </div>
+            <div class="product-grid">
+                <div class="product-card">
+                    <div class="product-title">USB Blaster (кабель для програмування ALTERA CPLD/FPGA)</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="120">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/usb-blaster" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Плата розробки CPLD MAX II EPM240 Minimum System Core Board</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="3">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="1020">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/cpld-max2-epm240" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">USB кабель-перетворювач 5В постійного струму з роз'ємом 2,1x5,5 мм</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="3">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="150">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/usb-dc-cable" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">MAX II EPM240T100C5N chip on FQFP TQFP 32 44 64 80 100 LQFP</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="285">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/max2-epm240t100c5n" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">FQFP TQFP 32 44 64 80 100 LQFP to DIP Transfer Board</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="100">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/fqfp-to-dip-adapter" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Імпульсний блок живлення 12V 12A</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="510">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/power-supply-12v-12a" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Імпульсний блок живлення 24V 15A</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="1090">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/power-supply-24v-15a" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">WIMA Film Capacitor MKP10 0.15UF 1600V 650V</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="2">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="310">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/wima-capacitor-015uf" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">WIMA Film Capacitor MKP10 0.47UF 2000V 700V</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="4">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="1860">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/wima-capacitor-047uf" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Алюмінієві силові резистори з проволочним намотанням 50-100 Вт</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="5">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="270">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/aluminum-power-resistors" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Модуль DC/AC інвертор-перетворювач 12В DC - 110/220В АС 150W</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="230">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/dc-ac-inverter-150w" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Перетворювач/стабілізатор знижувальний регульований DC-DC 300 Вт</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="225">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/dc-dc-converter-300w" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">ESP32-CAM-MB Arduino з камерою, WiFi, Bluetooth, microUSB</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="3">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="610">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/esp32-cam-mb" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Драйвер TC4452VAT</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="10">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="900">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/driver-tc4452vat" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Драйвер TC4452VPA</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="10">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="330">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/driver-tc4452vpa" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Набір резисторів 2 Вт — 3 номінали по 30 штук кожного: 1 кОм, 100 кОм, 1 МОм</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="340">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="3">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/resistor-set-2w" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Separate Products Section -->
+        <div class="section">
+            <h2><i class="fas fa-shopping-cart"></i> Також є у продажу</h2>
+            <div class="product-grid">
+                <div class="product-card">
+                    <div class="product-title">Б/В Жорсткий диск HDD 2 Тб 3.5" SATA для комп'ютера</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="1100">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/hdd-2tb-sata" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">4G LTE USB модем із функцією роутера</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="270">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/4g-lte-usb-modem" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Портативна сонячна панель 20 Вт з USB виходом 5 вольт</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="390">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/solar-panel-20w" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">500 Вт 24 В генератор змінного струму для вітрогенератора</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="5900">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/wind-generator-500w" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Intel Core i9 10900K/DDR4 32 ГБ/SSD 240 ГБ/HDD 2TБ/GeForce GT 730/Windows 11</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="29950">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/intel-i9-pc" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">HAVIT C1096 веб-камера 1080P FullHD з мікрофоном штативом та USB</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="1100">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/havit-webcam-c1096" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Конвертер адаптер HDMI to RCA AV тюльпани, перехідник аудіо відео</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="190">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/hdmi-to-rca-converter" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Instrustar ISDS205A Портативний цифровий USB-осцилограф на базі ПК</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="1850">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/instrustar-oscilloscope" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-title">Високоякісний осцилографічний щуп P6100, 2 шт., смуга пропускання до 100 МГц</div>
+                    <div class="product-fields">
+                        <div class="field-group">
+                            <label class="field-label">Кількість</label>
+                            <input type="number" class="field-input" min="1" value="2">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ціна (грн)</label>
+                            <input type="number" class="field-input" placeholder="290">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Наявність</label>
+                            <select class="field-input">
+                                <option>В наявності</option>
+                                <option>Під замовлення</option>
+                            </select>
+                        </div>
+                    </div>
+                    <a href="/products/oscilloscope-probe-p6100" class="view-product-btn">
+                        <i class="fas fa-eye"></i> Переглянути товар
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Components Package Section -->
+        <div class="section">
+            <h2><i class="fas fa-toolbox"></i> Комплектуючі компоненти</h2>
+            <div class="bundle-price">
+                <i class="fas fa-tags"></i> Пакет: +2850 грн
+            </div>
+            <div class="components-grid">
+                <div class="component-card">
+                    <div class="component-title">IR21531PBF - драйвер транзисторів</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">TC4420CPA - драйвер MOSFET</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="7" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">TP4A-T50/30/20-C TDG - феритовий сердечник</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">AS225-125A - феритове кільце 57×35×15 мм, 126г</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Феритове кільце 49×32×15 мм - тороїдальний сердечник PC40</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Зелене феритове кільце 27×14×11 мм - для фільтрів</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Зелене феритове кільце 13×7×5 мм - для фільтрів</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="9" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">6,8 нФ 50В X7R ±10% керамічні конденсатори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">100 нФ 630В CBB поліпропіленові конденсатори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">2,2 мкФ 630В CBB поліпропіленові конденсатори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">1 мкФ 50В монолітні конденсатори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="100" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">4,7 мкФ 50В монолітні конденсатори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="50" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">0,15 мкФ 400В CBB конденсатори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="9" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">47 мкФ 50В низькоімпедансні 6,3×11 мм електролітичні</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="3" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">100 мкФ 50В низькоімпедансні 10×12,5 мм електролітичні</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="2" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">47 мкФ 450В 22×25 мм електролітичні</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">47 мкФ 400В низький ESR електролітичні</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="4" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">47 мкФ 50В SMD електролітичні</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="40" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">4700 мкФ 50В 18×35 мм електролітичні</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="2" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">3,9 Ом 5% 0,25Вт резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="20" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">3,3 кОм 5% 5Вт керамічні резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">3,9 кОм 5% 5Вт керамічні резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">1 кОм 2Вт 1% металоплівкові резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">2,7 кОм 2Вт 1% металоплівкові резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">3,3 кОм 2Вт 1% металоплівкові резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">1 кОм 0,25Вт 1% металоплівкові резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="100" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">13 Ом 0,25Вт 1% металоплівкові резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="100" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">12 Ом 0,25Вт 1% металоплівкові резистори</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="100" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">10 кОм багатообертовий прецизійний 3590S</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="2" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">10 кОм лінійний потенціометр WH148</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="5" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">10 кОм підстроювальний 3296</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">IRF3205PBF - N-канальний MOSFET</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="2" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">IRFP460 - N-канальний 500В 20А MOSFET</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="4" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">IRFP260N - N-канальний 200В 50А MOSFET</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="3" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">IRF510 - N-канальний 100В 5,6А MOSFET</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">2SK1162 - N-канальний 500В 10А TO-3P MOSFET</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="5" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">2SK2611 - N-канальний MOSFET</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="9" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">2SC5200 - NPN високої потужності транзистор</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="3" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">MJE15030 - NPN TO-220 транзистор</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="9" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Набір транзисторів TO-92 (BC337, BC327, 2N2222, 2N2907, 2N3904, 2N3906, S8050, S8550, A1015, C1815)</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="200" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">MUR460 - швидкий діод 4А 600В</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="40" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">UF4005 - ультрашвидкий діод 1А 400В</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="20" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">BZX55C - стабілітрон 16В 0,5Вт DO-35</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="100" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Дросель 100 мГн 10%</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Термопаста КПТ-19 17г</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Плати для прототипування 5×7 см</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Плати для прототипування 7×9 см</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="7" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">DIP-8 панельки</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="38" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Кабелі Dupont</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="360" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Гвинти М3×12 мм</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1000" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">Клавіатура 2×4</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">ST-Link V2 програматор</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-title">LM2596S-ADJ понижуючий DC-DC модуль</div>
+                    <div class="component-qty">
+                        <label>Кількість:</label>
+                        <input type="number" value="4" min="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-info">
+            <h3><i class="fas fa-phone"></i> Контактна інформація</h3>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <i class="fas fa-globe"></i>
+                    <span><a href="https://markettrader.mooo.com/" target="new" class="view-product-btn">markettrader.mooo.com</a></span>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Telegram: <a href="https://t.me/bogdansuvorov" target="new" class="view-product-btn">@bogdansuvorov</a></span>
+                </div>
+
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>emailbsuv@gmail.com</span>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Україна</span>
+                </div>
+		</div>
+            <p style="margin-top: 20px; opacity: 0.8;">
+                © 2025 MarketTrader Electronics. Професійні рішення для розробки електроніки.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Smooth scrolling for internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Auto-save form data to localStorage
+        function saveFormData() {
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                if (input.value) {
+                    localStorage.setItem(input.name || input.id || 'form_' + Math.random(), input.value);
+                }
+            });
+        }
+
+        // Save form data on input change
+        document.addEventListener('input', saveFormData);
+
+        // Add loading animation to product buttons
+        document.querySelectorAll('.view-product-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Завантаження...';
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fas fa-eye"></i> Переглянути товар';
+                }, 1000);
+            });
+        });
+
+        // Price calculator
+        function calculateTotal() {
+            let total = 0;
+            document.querySelectorAll('.field-input[placeholder*="грн"], .field-input[type="number"]').forEach(input => {
+                if (input.previousElementSibling?.textContent.includes('Ціна') && input.value) {
+                    const qty = input.closest('.product-fields')?.querySelector('input[type="number"]')?.value || 1;
+                    total += parseFloat(input.value) * parseInt(qty);
+                }
+            });
+            
+            // Update total display (if element exists)
+            const totalDisplay = document.getElementById('total-price');
+            if (totalDisplay) {
+                totalDisplay.textContent = total.toLocaleString('uk-UA') + ' грн';
+            }
+        }
+
+        // Calculate total on input change
+        document.addEventListener('input', calculateTotal);
+
+        // Mobile optimization
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.product-card').forEach(card => {
+                card.style.margin = '10px 0';
+            });
+        }
+    </script>
+    <div class="chatbot-container">
+        <button class="chat-toggle" onclick="toggleChat()">💬</button>
+        
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                🤖 Помічник MarketTrader
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    Привіт! Я ваш віртуальний помічник. Чим можу допомогти?
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+            
+            <div class="quick-actions">
+                <button class="action-btn" onclick="askQuestion('Як зробити замовлення?')">❓ Як зробити замовлення?</button>
+                <button class="action-btn" onclick="askQuestion('Умови доставки')">📦 Умови доставки</button>
+                <button class="action-btn" onclick="askQuestion('Технічна підтримка')">🔧 Технічна підтримка</button>
+                <button class="action-btn" onclick="askQuestion('Зв\'язатися з менеджером')">👨‍💼 Зв'язатися з менеджером</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isOpen = false;
+
+        const responses = {
+            'замовлення': 'Для замовлення заповніть форму на сайті або напишіть в Telegram @bogdansuvorov. Мінімальне замовлення: 10000 грн.',
+            'доставка': 'Доставка по всій Україні. Нова Пошта, Укрпошта. Вартість доставки розраховується індивідуально.',
+            'підтримка': 'Технічна підтримка доступна в Telegram @bogdansuvorov або на email emailbsuv@gmail.com',
+            'менеджер': 'Зв\'яжіться з нашим менеджером в Telegram: @bogdansuvorov або напишіть на emailbsuv@gmail.com',
+            'ціна': 'Ціни вказані в гривнях. Торг доречний. Знижка 1.21% від замовлення 15000+ грн.',
+            'fpga': 'У нас є плати FPGA Cyclone IV, MAX II, USB Blaster програматори та супутні компоненти.',
+            'ea': 'Market Trader EA - професійний торговий робот для MT4/MT5. Працює на 28 валютних парах.',
+            'default': 'Дякую за питання! Для детальної консультації звертайтесь в Telegram @bogdansuvorov'
+        };
+
+        function toggleChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            const toggle = document.querySelector('.chat-toggle');
+            
+            isOpen = !isOpen;
+            
+            if (isOpen) {
+                chatWindow.style.display = 'flex';
+                toggle.textContent = '✕';
+                toggle.style.background = '#e74c3c';
+            } else {
+                chatWindow.style.display = 'none';
+                toggle.textContent = '💬';
+                toggle.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            }
+        }
+
+        function askQuestion(question) {
+            addMessage(question, 'user');
+            showTyping();
+            
+            setTimeout(() => {
+                hideTyping();
+                const response = getResponse(question);
+                addMessage(response, 'bot');
+            }, 1500);
+        }
+
+        function addMessage(text, sender) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTyping() {
+            document.getElementById('typingIndicator').style.display = 'block';
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+
+        function hideTyping() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        function getResponse(question) {
+            const q = question.toLowerCase();
+            
+            for (const [key, response] of Object.entries(responses)) {
+                if (q.includes(key)) {
+                    return response;
+                }
+            }
+            
+            return responses.default;
+        }
+
+        // Автоматическое приветствие через 3 секунды
+        setTimeout(() => {
+            if (!isOpen) {
+                const toggle = document.querySelector('.chat-toggle');
+                toggle.style.animation = 'pulse 1s infinite';
+                toggle.style.background = '#e74c3c';
+                
+                setTimeout(() => {
+                    toggle.style.animation = '';
+                    toggle.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                }, 3000);
+            }
+        }, 3000);
+    </script>
+
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</body>
+</html>
